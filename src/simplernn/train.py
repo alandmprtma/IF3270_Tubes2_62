@@ -7,14 +7,15 @@ from model import create_rnn_model
 import config
 import os
 
-# Set random seeds for reproducibility
+# Set random seed biar hasil eksperimen konsisten
 np.random.seed(config.RANDOM_SEED)
 tf.random.set_seed(config.RANDOM_SEED)
 
-# Create directories if they don't exist
+# Buat folder untuk menyimpan hasil
 os.makedirs("models", exist_ok=True)
 os.makedirs("checkpoints", exist_ok=True)
 os.makedirs("plots", exist_ok=True)
+
 
 def train_and_evaluate_model(
     num_rnn_layers=config.NUM_RNN_LAYERS,
@@ -26,17 +27,13 @@ def train_and_evaluate_model(
     model_name="simple_rnn_model",
     use_class_weights=True,
 ):
-    """
-    Train and evaluate a SimpleRNN model with the specified hyperparameters.
-    All default values are pulled from config.py.
-    """
     print(f"\n--- Training Model: {model_name} ---")
     print(
         f"Config: Layers={num_rnn_layers}, Units={rnn_units}, "
         f"Bidirectional={bidirectional}, Dropout={dropout_rate}, L2={l2_reg}"
     )
 
-    # Load data
+    # Muat dataset
     (
         (train_texts, train_labels),
         (valid_texts, valid_labels),
@@ -45,10 +42,12 @@ def train_and_evaluate_model(
         num_classes,
     ) = load_data()
 
-    print(f"Dataset sizes: Train={len(train_texts)}, Valid={len(valid_texts)}, Test={len(test_texts)}")
-    print(f"Class distribution in train: {np.bincount(train_labels)}")
+    print(
+        f"Ukuran dataset: Train={len(train_texts)}, Valid={len(valid_texts)}, Test={len(test_texts)}"
+    )
+    print(f"Distribusi kelas di data train: {np.bincount(train_labels)}")
 
-    # Calculate class weights if needed
+    # Hitung bobot kelas untuk mengatasi ketidakseimbangan data
     if use_class_weights:
         class_counts = np.bincount(train_labels)
         total_samples = len(train_labels)
@@ -56,22 +55,24 @@ def train_and_evaluate_model(
             i: total_samples / (len(class_counts) * count)
             for i, count in enumerate(class_counts)
         }
-        print(f"Using class weights: {class_weights}")
+        print(f"Menggunakan bobot kelas: {class_weights}")
     else:
         class_weights = None
 
-    # Create and adapt text vectorizer
+    # Buat dan siapkan text vectorizer
     vectorizer, vocab, vocab_size = create_text_vectorizer(
-        train_texts, max_tokens=config.MAX_TOKENS, output_sequence_length=config.OUTPUT_SEQ_LEN
+        train_texts,
+        max_tokens=config.MAX_TOKENS,
+        output_sequence_length=config.OUTPUT_SEQ_LEN,
     )
-    print(f"Vocabulary size: {vocab_size}")
+    print(f"Ukuran vocabulary: {vocab_size}")
 
-    # Convert texts to sequences
+    # Ubah teks jadi sequence angka
     train_sequences = vectorizer(train_texts)
     valid_sequences = vectorizer(valid_texts)
     test_sequences = vectorizer(test_texts)
 
-    # Create datasets
+    # Buat dataset TF untuk efisiensi training
     train_dataset = tf.data.Dataset.from_tensor_slices((train_sequences, train_labels))
     train_dataset = (
         train_dataset.shuffle(len(train_texts) * 4, reshuffle_each_iteration=True)
@@ -85,7 +86,7 @@ def train_and_evaluate_model(
     test_dataset = tf.data.Dataset.from_tensor_slices((test_sequences, test_labels))
     test_dataset = test_dataset.batch(config.BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
 
-    # Create model
+    # Buat model sesuai konfigurasi
     model = create_rnn_model(
         vocab_size=vocab_size,
         embedding_dim=config.EMBEDDING_DIM,
@@ -98,15 +99,15 @@ def train_and_evaluate_model(
         learning_rate=learning_rate,
     )
 
-    # Display model summary
+    # Tampilkan ringkasan model
     model.summary()
 
-    # Set up callbacks
+    # Siapkan callback untuk training
     checkpoint_path = f"checkpoints/{model_name}.weights.h5"
     callbacks = [
         ModelCheckpoint(
             checkpoint_path,
-            monitor="val_loss",
+            monitor="val_loss",  # Pantau val_loss untuk simpan model terbaik
             mode="min",
             save_best_only=True,
             save_weights_only=True,
@@ -115,22 +116,22 @@ def train_and_evaluate_model(
         EarlyStopping(
             monitor="val_loss",
             mode="min",
-            patience=config.ES_PATIENCE,
+            patience=config.ES_PATIENCE,  # Berhenti kalau tidak ada perbaikan
             verbose=1,
             restore_best_weights=True,
         ),
         ReduceLROnPlateau(
             monitor="val_loss",
             mode="min",
-            factor=config.LR_FACTOR,
+            factor=config.LR_FACTOR,  # Faktor pengurangan learning rate
             patience=config.LR_PATIENCE,
             min_lr=config.MIN_LR,
             verbose=1,
         ),
     ]
 
-    # Train model
-    print("Starting model training...")
+    # Latih model
+    print("Mulai pelatihan model...")
     history = model.fit(
         train_dataset,
         validation_data=valid_dataset,
@@ -140,11 +141,11 @@ def train_and_evaluate_model(
         class_weight=class_weights,
     )
 
-    # Evaluate on test set
-    print("Evaluating on test set with best weights...")
+    # Evaluasi di test set
+    print("Evaluasi di test set dengan bobot terbaik...")
     test_loss, test_acc = model.evaluate(test_dataset, verbose=1)
 
-    # Get predictions for F1 calculation
+    # Ambil prediksi untuk menghitung F1
     test_pred_probs = model.predict(test_dataset)
     test_f1 = compute_f1_score(test_labels, test_pred_probs)
 
@@ -152,31 +153,35 @@ def train_and_evaluate_model(
     print(f"Test Accuracy: {test_acc:.4f}")
     print(f"Test Macro F1: {test_f1:.4f}")
 
-    # Calculate and print metrics per class
+    # Hitung dan tampilkan metrik per kelas
     y_pred = np.argmax(test_pred_probs, axis=1)
     from sklearn.metrics import classification_report, confusion_matrix
 
     class_names = list(label_mapping.keys())
-    print("\nClassification Report:")
-    print(classification_report(test_labels, y_pred, target_names=class_names, zero_division=0))
+    print("\nLaporan Klasifikasi:")
+    print(
+        classification_report(
+            test_labels, y_pred, target_names=class_names, zero_division=0
+        )
+    )
 
     # Confusion matrix
     cm = confusion_matrix(test_labels, y_pred)
-    print("\nConfusion Matrix:")
+    print("\nMatriks Kebingungan:")
     print(cm)
 
-    # Save model
+    # Simpan model
     full_model_path = f"models/{model_name}_full_model.keras"
     model.save(full_model_path)
-    print(f"Full model saved to: {full_model_path}")
+    print(f"Model disimpan di: {full_model_path}")
 
-    # Save vectorizer
+    # Simpan vectorizer
     vectorizer_path = f"models/{model_name}_vectorizer.keras"
     tf.keras.models.save_model(
         tf.keras.Sequential([vectorizer], name="text_vectorization_model"),
         vectorizer_path,
     )
-    print(f"Vectorizer saved to: {vectorizer_path}")
+    print(f"Vectorizer disimpan di: {vectorizer_path}")
 
     return (
         model,
@@ -189,46 +194,46 @@ def train_and_evaluate_model(
 
 
 def plot_training_history(history, model_name):
-    """Plot and save training history curves"""
+    """Plot dan simpan kurva history training"""
     plt.figure(figsize=(12, 5))
 
     # Plot Loss
     plt.subplot(1, 2, 1)
-    plt.plot(history.history["loss"], label="Training Loss")
-    plt.plot(history.history["val_loss"], label="Validation Loss")
-    plt.title(f"Loss Curves")
+    plt.plot(history.history["loss"], label="Loss Training")
+    plt.plot(history.history["val_loss"], label="Loss Validasi")
+    plt.title(f"Kurva Loss")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.legend()
 
     # Plot Accuracy
     plt.subplot(1, 2, 2)
-    plt.plot(history.history["accuracy"], label="Training Accuracy")
-    plt.plot(history.history["val_accuracy"], label="Validation Accuracy")
-    plt.title(f"Accuracy Curves")
+    plt.plot(history.history["accuracy"], label="Akurasi Training")
+    plt.plot(history.history["val_accuracy"], label="Akurasi Validasi")
+    plt.title(f"Kurva Akurasi")
     plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
+    plt.ylabel("Akurasi")
     plt.legend()
 
     plt.tight_layout()
     plot_path = f"plots/{model_name}_training_curves.png"
     plt.savefig(plot_path)
-    print(f"Training plots saved to: {plot_path}")
+    print(f"Plot training disimpan di: {plot_path}")
     plt.show()
 
 
 if __name__ == "__main__":
-    # Train baseline model - we can override specific parameters here
+    # Latih model baseline - kita bisa ganti parameter spesifik di sini
     model_results = train_and_evaluate_model(
         num_rnn_layers=1,
         rnn_units=48,
         bidirectional=True,
         model_name="simplernn_baseline",
     )
-    
+
     model, history, _, _, _, metrics = model_results
     plot_training_history(history, "simplernn_baseline")
-    
-    print("\nFinal Evaluation Metrics:")
+
+    print("\nMetrik Evaluasi Final:")
     for metric, value in metrics.items():
         print(f"{metric}: {value:.4f}")

@@ -1,34 +1,36 @@
-# Data processing parameters
-MAX_TOKENS = 8000
-OUTPUT_SEQ_LEN = 80
+# Parameter pemrosesan data
+MAX_TOKENS = 8000  # Jumlah maksimum token yang dikenali model
+OUTPUT_SEQ_LEN = (
+    80  # Panjang maksimum sequence input (kalimat dipotong/dipadding ke ukuran ini)
+)
 
-# Training parameters
+# Parameter training
 BATCH_SIZE = 24
 EPOCHS = 40
 RANDOM_SEED = 42
 
-# Default model architecture
-EMBEDDING_DIM = 96
-RNN_UNITS = 48
-NUM_RNN_LAYERS = 1
+# Arsitektur model default
+EMBEDDING_DIM = 96  # Dimensi vektor embedding
+RNN_UNITS = 48  # Jumlah unit RNN - nilai default
+NUM_RNN_LAYERS = 1  # Jumlah layer RNN - nilai default
 BIDIRECTIONAL = True
 
-# Regularization parameters
-DROPOUT_RATE = 0.3  # Main dropout after RNN
-EMBEDDING_DROPOUT = 0.2  # Dropout after embedding
-RECURRENT_DROPOUT = 0.1  # Internal RNN state dropout
-L2_REG = 0.001  # L2 regularization factor
+# Parameter regularisasi - untuk mencegah overfitting
+DROPOUT_RATE = 0.3  # Dropout setelah layer RNN
+EMBEDDING_DROPOUT = 0.2  # Dropout setelah embedding, mencegah overfitting di awal
+RECURRENT_DROPOUT = 0.1  # Dropout internal di RNN
+L2_REG = 0.01  # Regularisasi L2, membatasi bobot agar tidak terlalu besar
 
-# Optimization parameters
-LEARNING_RATE = 0.001
-LR_FACTOR = 0.7  # Factor for ReduceLROnPlateau
-LR_PATIENCE = 3  # Patience for ReduceLROnPlateau
-MIN_LR = 0.00001
+# Parameter optimisasi
+LEARNING_RATE = 0.001  # Learning rate awal Adam
+LR_FACTOR = 0.7  # Faktor untuk mengurangi learning rate jika stuck
+LR_PATIENCE = 3  # Tunggu 3 epoch dulu sebelum kurangi learning rate
+MIN_LR = 0.00001  # Learning rate minimum
 
-# Early stopping parameters
-ES_PATIENCE = 6
+# Parameter early stopping
+ES_PATIENCE = 6  # Berhenti training kalau 6 epoch tidak ada improvement
 
-# Experiment variations - for testing different configurations
-RNN_LAYERS_VARIATIONS = [1, 2, 3]  # For layer count experiments
-RNN_UNITS_VARIATIONS = [24, 48, 96]  # For unit count experiments
-BIDIRECTIONAL_VARIATIONS = [False, True]  # For directionality experiments
+# Variasi untuk eksperimen - buat menguji konfigurasi berbeda
+RNN_LAYERS_VARIATIONS = [1, 2, 3]  # Variasi jumlah layer
+RNN_UNITS_VARIATIONS = [24, 48, 96]  # Variasi jumlah unit (neuron) per layer
+BIDIRECTIONAL_VARIATIONS = [False, True]  # Variasi arah RNN (satu arah atau dua arah)
