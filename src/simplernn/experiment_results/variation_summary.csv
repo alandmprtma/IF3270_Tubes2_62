@@ -1,0 +1,4 @@
+Variasi,Konfigurasi Terbaik,Akurasi,F1 Score,Dampak Relatif
+"Layer: Terbaik dari [1, 2, 3]",1 layer,0.5950,0.5599,0.1704
+"Unit: Terbaik dari [24, 48, 96]",24 unit,0.6750,0.6646,0.1019
+"Arah: Terbaik dari ['Unidirectional', 'Bidirectional']",Bidirectional,0.6000,0.5791,0.3964

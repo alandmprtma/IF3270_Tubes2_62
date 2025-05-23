@@ -1,4 +1,0 @@
-Variation,Best Config,Accuracy,F1 Score,Relative Impact
-"Layers: Best of [1, 2, 3]",2 layers,0.5475,0.5379,0.1921
-"Units: Best of [24, 48, 96]",96 units,0.6175,0.5951,0.1921
-"Direction: Best of ['Unidirectional', 'Bidirectional']",Bidirectional,0.5950,0.5318,0.0919

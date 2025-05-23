@@ -11,12 +11,6 @@ import os
 np.random.seed(config.RANDOM_SEED)
 tf.random.set_seed(config.RANDOM_SEED)
 
-# Buat folder untuk menyimpan hasil
-os.makedirs("models", exist_ok=True)
-os.makedirs("checkpoints", exist_ok=True)
-os.makedirs("plots", exist_ok=True)
-
-
 def train_and_evaluate_model(
     num_rnn_layers=config.NUM_RNN_LAYERS,
     rnn_units=config.RNN_UNITS,
@@ -165,11 +159,6 @@ def train_and_evaluate_model(
         )
     )
 
-    # Confusion matrix
-    cm = confusion_matrix(test_labels, y_pred)
-    print("\nMatriks Kebingungan:")
-    print(cm)
-
     # Simpan model
     full_model_path = f"models/{model_name}_full_model.keras"
     model.save(full_model_path)
@@ -216,24 +205,4 @@ def plot_training_history(history, model_name):
     plt.legend()
 
     plt.tight_layout()
-    plot_path = f"plots/{model_name}_training_curves.png"
-    plt.savefig(plot_path)
-    print(f"Plot training disimpan di: {plot_path}")
     plt.show()
-
-
-if __name__ == "__main__":
-    # Latih model baseline - kita bisa ganti parameter spesifik di sini
-    model_results = train_and_evaluate_model(
-        num_rnn_layers=1,
-        rnn_units=48,
-        bidirectional=True,
-        model_name="simplernn_baseline",
-    )
-
-    model, history, _, _, _, metrics = model_results
-    plot_training_history(history, "simplernn_baseline")
-
-    print("\nMetrik Evaluasi Final:")
-    for metric, value in metrics.items():
-        print(f"{metric}: {value:.4f}")

@@ -29,8 +29,3 @@ MIN_LR = 0.00001  # Learning rate minimum
 
 # Parameter early stopping
 ES_PATIENCE = 6  # Berhenti training kalau 6 epoch tidak ada improvement
-
-# Variasi untuk eksperimen - buat menguji konfigurasi berbeda
-RNN_LAYERS_VARIATIONS = [1, 2, 3]  # Variasi jumlah layer
-RNN_UNITS_VARIATIONS = [24, 48, 96]  # Variasi jumlah unit (neuron) per layer
-BIDIRECTIONAL_VARIATIONS = [False, True]  # Variasi arah RNN (satu arah atau dua arah)

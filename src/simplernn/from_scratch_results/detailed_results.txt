@@ -5,37 +5,37 @@ Implementation match accuracy: 1.0000
 Mean absolute error between predictions: 0.000000
 
 Test set metrics:
-From scratch - Accuracy: 0.3775, F1 Score: 0.3468
-Keras - Accuracy: 0.3775, F1 Score: 0.3468
+From scratch - Accuracy: 0.5725, F1 Score: 0.5523
+Keras - Accuracy: 0.5725, F1 Score: 0.5523
 
 From scratch - Classification Report:
               precision    recall  f1-score   support
 
-    negative       0.37      0.38      0.37       153
-     neutral       0.28      0.17      0.21        96
-    positive       0.41      0.51      0.46       151
+    negative       0.59      0.29      0.39       153
+     neutral       0.58      0.60      0.59        96
+    positive       0.56      0.83      0.67       151
 
-    accuracy                           0.38       400
-   macro avg       0.35      0.35      0.35       400
-weighted avg       0.36      0.38      0.37       400
+    accuracy                           0.57       400
+   macro avg       0.58      0.58      0.55       400
+weighted avg       0.58      0.57      0.55       400
 
 Keras - Classification Report:
               precision    recall  f1-score   support
 
-    negative       0.37      0.38      0.37       153
-     neutral       0.28      0.17      0.21        96
-    positive       0.41      0.51      0.46       151
+    negative       0.59      0.29      0.39       153
+     neutral       0.58      0.60      0.59        96
+    positive       0.56      0.83      0.67       151
 
-    accuracy                           0.38       400
-   macro avg       0.35      0.35      0.35       400
-weighted avg       0.36      0.38      0.37       400
+    accuracy                           0.57       400
+   macro avg       0.58      0.58      0.55       400
+weighted avg       0.58      0.57      0.55       400
 
 From scratch - Confusion Matrix:
-[[58 21 74]
- [45 16 35]
- [54 20 77]]
+[[ 45  33  75]
+ [ 15  58  23]
+ [ 16   9 126]]
 
 Keras - Confusion Matrix:
-[[58 21 74]
- [45 16 35]
- [54 20 77]]
+[[ 45  33  75]
+ [ 15  58  23]
+ [ 16   9 126]]
