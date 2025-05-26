@@ -7,9 +7,6 @@ from model import create_rnn_model
 import config
 import os
 
-# Set random seed biar hasil eksperimen konsisten
-np.random.seed(config.RANDOM_SEED)
-tf.random.set_seed(config.RANDOM_SEED)
 
 def train_and_evaluate_model(
     num_rnn_layers=config.NUM_RNN_LAYERS,

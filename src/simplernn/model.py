@@ -35,7 +35,7 @@ def create_rnn_model(
 
     # Tambahkan layer RNN sesuai jumlah yang diminta
     for i in range(num_rnn_layers):
-        # Untuk layer terakhir, tidak perlu return sequences (kecuali layer terakhir)
+        # Untuk layer terakhir, tidak perlu return sequences
         return_sequences = i < num_rnn_layers - 1
 
         # Buat layer SimpleRNN dengan regularisasi L2
@@ -49,7 +49,7 @@ def create_rnn_model(
             name=f"simplernn_layer_{i+1}",
         )
 
-        # Bungkus dengan Bidirectional jika diminta (baca dari dua arah)
+        # Bungkus dengan Bidirectional jika diminta
         if bidirectional:
             model.add(layers.Bidirectional(rnn_layer, name=f"bidirectional_rnn_{i+1}"))
         else:
