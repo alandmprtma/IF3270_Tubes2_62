@@ -45,7 +45,6 @@ def train_and_evaluate_lstm_model(
     if use_class_weights:
         class_counts = np.bincount(train_labels)
         total_samples = len(train_labels)
-        # Hindari pembagian dengan nol jika ada kelas yang tidak ada di train_labels (jarang terjadi tapi aman)
         class_weights = {
             i: total_samples / (len(class_counts) * count) if count > 0 else 0
             for i, count in enumerate(class_counts)
@@ -98,6 +97,11 @@ def train_and_evaluate_lstm_model(
         learning_rate=learning_rate,
     )
 
+    if config.OUTPUT_SEQ_LEN is not None:
+        model.build(input_shape=(None, config.OUTPUT_SEQ_LEN))
+    else:
+        print("Peringatan: config.OUTPUT_SEQ_LEN tidak disetel, model.build() dilewati. Summary mungkin unbuilt.")
+
     # Tampilkan ringkasan model
     model.summary()
 
@@ -144,7 +148,7 @@ def train_and_evaluate_lstm_model(
     training_duration = time.time() - start_train_time
     print(f"Pelatihan selesai dalam {training_duration:.2f} detik.")
 
-    # Evaluasi di test set (model sudah restore bobot terbaik jika EarlyStopping digunakan)
+    # Evaluasi di test set
     print("Evaluasi di test set dengan bobot terbaik...")
     test_loss, test_acc = model.evaluate(test_dataset, verbose=1)
 
@@ -152,7 +156,7 @@ def train_and_evaluate_lstm_model(
     test_pred_probs = model.predict(test_dataset)
     test_f1 = compute_f1_score(
         test_labels, test_pred_probs
-    )  # Menggunakan fungsi dari data_preprocessing
+    ) 
 
     print(f"Test Loss: {test_loss:.4f}")
     print(f"Test Accuracy: {test_acc:.4f}")
@@ -229,11 +233,9 @@ def plot_training_history(history, model_name):
     plt.show()
 
 
-# Contoh penggunaan (bisa dijalankan jika file ini dieksekusi langsung)
 if __name__ == "__main__":
     print("Menjalankan contoh pelatihan model LSTM default...")
 
-    # Pastikan direktori output ada
     os.makedirs("models", exist_ok=True)
     os.makedirs("checkpoints", exist_ok=True)
 

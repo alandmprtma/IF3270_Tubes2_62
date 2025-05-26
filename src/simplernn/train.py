@@ -90,6 +90,11 @@ def train_and_evaluate_model(
         learning_rate=learning_rate,
     )
 
+    if config.OUTPUT_SEQ_LEN is not None:
+        model.build(input_shape=(None, config.OUTPUT_SEQ_LEN))
+    else:
+        print("Peringatan: config.OUTPUT_SEQ_LEN tidak disetel, model.build() dilewati. Summary mungkin unbuilt.")
+
     # Tampilkan ringkasan model
     model.summary()
 

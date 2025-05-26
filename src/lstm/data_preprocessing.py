@@ -3,8 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import TextVectorization
 from sklearn.metrics import f1_score
-import config as config
-
+import config
 
 def load_data(base_path="data"):
     train_df = pd.read_csv(f"{base_path}/train.csv")
