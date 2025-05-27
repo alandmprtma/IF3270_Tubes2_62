@@ -14,9 +14,9 @@ from data_preprocessing import (
 
 class CNNFromScratch:
     """
-    Implementation of a CNN model from scratch using NumPy.
+    Optimized implementation of a CNN model from scratch using vectorized NumPy operations.
     This class loads weights from a trained Keras model and performs
-    forward propagation to make predictions.
+    forward propagation with significant performance improvements.
     """
     
     def __init__(self, keras_model_path):
@@ -94,9 +94,75 @@ class CNNFromScratch:
             elif layer_type == 'Flatten':
                 self.layer_info[layer_name] = {'type': 'Flatten'}
     
+    def im2col(self, inputs, kernel_size, strides, padding):
+        """
+        Convert image to column matrix for efficient convolution using matrix multiplication.
+        This is a key optimization that transforms the convolution operation into a GEMM operation.
+        
+        Parameters:
+        -----------
+        inputs : numpy.ndarray
+            Input tensor of shape (batch_size, height, width, channels)
+        kernel_size : tuple
+            (kernel_height, kernel_width)
+        strides : tuple
+            (stride_h, stride_w)
+        padding : str
+            'valid' or 'same'
+        
+        Returns:
+        --------
+        numpy.ndarray
+            Column matrix of shape (batch_size * output_height * output_width, kernel_h * kernel_w * input_channels)
+        tuple
+            (output_height, output_width) - dimensions of output feature map
+        """
+        batch_size, input_height, input_width, input_channels = inputs.shape
+        kernel_height, kernel_width = kernel_size
+        stride_h, stride_w = strides
+        
+        # Calculate output dimensions
+        if padding == 'valid':
+            output_height = (input_height - kernel_height) // stride_h + 1
+            output_width = (input_width - kernel_width) // stride_w + 1
+            pad_h = pad_w = 0
+        else:  # padding == 'same'
+            output_height = input_height // stride_h
+            output_width = input_width // stride_w
+            pad_h = max(0, (output_height - 1) * stride_h + kernel_height - input_height)
+            pad_w = max(0, (output_width - 1) * stride_w + kernel_width - input_width)
+        
+        # Apply padding if needed
+        if pad_h > 0 or pad_w > 0:
+            inputs = np.pad(inputs, 
+                          ((0, 0), (pad_h//2, pad_h - pad_h//2), 
+                           (pad_w//2, pad_w - pad_w//2), (0, 0)), 
+                          mode='constant')
+        
+        # Pre-allocate output matrix
+        col_matrix = np.zeros((batch_size * output_height * output_width, 
+                              kernel_height * kernel_width * input_channels))
+        
+        # Vectorized im2col conversion
+        idx = 0
+        for b in range(batch_size):
+            for h in range(output_height):
+                for w in range(output_width):
+                    h_start = h * stride_h
+                    h_end = h_start + kernel_height
+                    w_start = w * stride_w
+                    w_end = w_start + kernel_width
+                    
+                    # Extract and flatten the patch
+                    patch = inputs[b, h_start:h_end, w_start:w_end, :]
+                    col_matrix[idx] = patch.flatten()
+                    idx += 1
+        
+        return col_matrix, (output_height, output_width)
+    
     def conv2d_forward(self, inputs, kernel, bias, strides=(1, 1), padding='valid', activation='relu'):
         """
-        2D Convolution forward pass
+        Optimized 2D Convolution forward pass using im2col and matrix multiplication
         
         Parameters:
         -----------
@@ -118,48 +184,25 @@ class CNNFromScratch:
         numpy.ndarray
             Output tensor after convolution
         """
-        batch_size, input_height, input_width, input_channels = inputs.shape
-        kernel_height, kernel_width, _, output_channels = kernel.shape
-        stride_h, stride_w = strides
+        batch_size = inputs.shape[0]
+        kernel_height, kernel_width, input_channels, output_channels = kernel.shape
         
-        # Calculate output dimensions
-        if padding == 'valid':
-            output_height = (input_height - kernel_height) // stride_h + 1
-            output_width = (input_width - kernel_width) // stride_w + 1
-            pad_h = pad_w = 0
-        else:  # padding == 'same'
-            output_height = input_height // stride_h
-            output_width = input_width // stride_w
-            pad_h = max(0, (output_height - 1) * stride_h + kernel_height - input_height)
-            pad_w = max(0, (output_width - 1) * stride_w + kernel_width - input_width)
+        # Convert image to column matrix
+        col_matrix, (output_height, output_width) = self.im2col(
+            inputs, (kernel_height, kernel_width), strides, padding
+        )
         
-        # Apply padding if needed
-        if pad_h > 0 or pad_w > 0:
-            inputs = np.pad(inputs, 
-                          ((0, 0), (pad_h//2, pad_h - pad_h//2), 
-                           (pad_w//2, pad_w - pad_w//2), (0, 0)), 
-                          mode='constant')
+        # Reshape kernel for matrix multiplication
+        kernel_matrix = kernel.reshape(-1, output_channels)
         
-        # Initialize output
-        output = np.zeros((batch_size, output_height, output_width, output_channels))
+        # Perform convolution as matrix multiplication (GEMM)
+        # This is much faster than nested loops
+        output_matrix = np.dot(col_matrix, kernel_matrix) + bias
         
-        # Perform convolution
-        for b in range(batch_size):
-            for h in range(output_height):
-                for w in range(output_width):
-                    h_start = h * stride_h
-                    h_end = h_start + kernel_height
-                    w_start = w * stride_w
-                    w_end = w_start + kernel_width
-                    
-                    # Extract input patch
-                    input_patch = inputs[b, h_start:h_end, w_start:w_end, :]
-                    
-                    # Convolution operation
-                    for f in range(output_channels):
-                        output[b, h, w, f] = np.sum(input_patch * kernel[:, :, :, f]) + bias[f]
+        # Reshape output back to tensor format
+        output = output_matrix.reshape(batch_size, output_height, output_width, output_channels)
         
-        # Apply activation
+        # Apply activation function vectorized
         if activation == 'relu':
             output = np.maximum(0, output)
         elif activation == 'softmax':
@@ -171,7 +214,7 @@ class CNNFromScratch:
     
     def pooling_forward(self, inputs, pool_size=(2, 2), strides=(2, 2), pooling_type='max'):
         """
-        Pooling layer forward pass
+        Optimized pooling layer forward pass using vectorized operations
         
         Parameters:
         -----------
@@ -197,32 +240,31 @@ class CNNFromScratch:
         output_height = (input_height - pool_h) // stride_h + 1
         output_width = (input_width - pool_w) // stride_w + 1
         
-        # Initialize output
+        # Pre-allocate output
         output = np.zeros((batch_size, output_height, output_width, channels))
         
-        # Perform pooling
-        for b in range(batch_size):
-            for h in range(output_height):
-                for w in range(output_width):
-                    h_start = h * stride_h
-                    h_end = h_start + pool_h
-                    w_start = w * stride_w
-                    w_end = w_start + pool_w
-                    
-                    # Extract input patch
-                    input_patch = inputs[b, h_start:h_end, w_start:w_end, :]
-                    
-                    # Apply pooling operation
-                    if pooling_type == 'max':
-                        output[b, h, w, :] = np.max(input_patch, axis=(0, 1))
-                    else:  # average pooling
-                        output[b, h, w, :] = np.mean(input_patch, axis=(0, 1))
+        # Vectorized pooling - process all channels at once
+        for h in range(output_height):
+            for w in range(output_width):
+                h_start = h * stride_h
+                h_end = h_start + pool_h
+                w_start = w * stride_w
+                w_end = w_start + pool_w
+                
+                # Extract patches for all batches and channels simultaneously
+                patches = inputs[:, h_start:h_end, w_start:w_end, :]
+                
+                # Apply pooling operation vectorized across batch and channel dimensions
+                if pooling_type == 'max':
+                    output[:, h, w, :] = np.max(patches, axis=(1, 2))
+                else:  # average pooling
+                    output[:, h, w, :] = np.mean(patches, axis=(1, 2))
         
         return output
     
     def flatten_forward(self, inputs):
         """
-        Flatten layer forward pass
+        Flatten layer forward pass (already optimized with reshape)
         
         Parameters:
         -----------
@@ -239,7 +281,7 @@ class CNNFromScratch:
     
     def dense_forward(self, inputs, kernel, bias, activation='relu'):
         """
-        Dense layer forward pass
+        Optimized dense layer forward pass using vectorized operations
         
         Parameters:
         -----------
@@ -257,14 +299,14 @@ class CNNFromScratch:
         numpy.ndarray
             Output tensor after dense layer
         """
-        # Linear transformation
+        # Linear transformation using optimized BLAS operations
         output = np.dot(inputs, kernel) + bias
         
-        # Apply activation
+        # Apply activation function vectorized
         if activation == 'relu':
             output = np.maximum(0, output)
         elif activation == 'softmax':
-            # Softmax activation for numerical stability
+            # Numerically stable softmax
             exp_output = np.exp(output - np.max(output, axis=1, keepdims=True))
             output = exp_output / np.sum(exp_output, axis=1, keepdims=True)
         
@@ -272,7 +314,7 @@ class CNNFromScratch:
     
     def forward(self, inputs):
         """
-        Full model forward pass
+        Optimized full model forward pass
         
         Parameters:
         -----------
@@ -374,8 +416,8 @@ class CNNFromScratch:
         implementation_accuracy = np.mean(scratch_classes == keras_classes)
         
         # Calculate F1 scores
-        scratch_f1 = compute_macro_f1_score(test_labels, scratch_preds)
-        keras_f1 = compute_macro_f1_score(test_labels, keras_preds)
+        scratch_f1 = self.compute_macro_f1_score(test_labels, scratch_preds)
+        keras_f1 = self.compute_macro_f1_score(test_labels, keras_preds)
         
         print(f"\nPrediction time comparison:")
         print(f"From scratch: {scratch_time:.4f} seconds")
@@ -391,6 +433,53 @@ class CNNFromScratch:
         
         return scratch_preds, keras_preds, implementation_accuracy
     
+    def compute_macro_f1_score(self, y_true, y_pred):
+        """
+        Compute macro F1-score for multi-class classification
+        
+        Parameters:
+        -----------
+        y_true : numpy.ndarray
+            True labels (one-hot encoded or integer labels)
+        y_pred : numpy.ndarray
+            Predicted probabilities
+        
+        Returns:
+        --------
+        float
+            Macro F1-score
+        """
+        # Convert predictions to class labels
+        if y_pred.ndim > 1:
+            y_pred_classes = np.argmax(y_pred, axis=1)
+        else:
+            y_pred_classes = y_pred
+        
+        # Convert true labels to class labels if one-hot encoded
+        if y_true.ndim > 1:
+            y_true_classes = np.argmax(y_true, axis=1)
+        else:
+            y_true_classes = y_true
+        
+        # Get unique classes
+        classes = np.unique(np.concatenate([y_true_classes, y_pred_classes]))
+        f1_scores = []
+        
+        for cls in classes:
+            # Calculate precision and recall for each class
+            tp = np.sum((y_true_classes == cls) & (y_pred_classes == cls))
+            fp = np.sum((y_true_classes != cls) & (y_pred_classes == cls))
+            fn = np.sum((y_true_classes == cls) & (y_pred_classes != cls))
+            
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            
+            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+            f1_scores.append(f1)
+        
+        return np.mean(f1_scores)
+
+    
 
 def run_from_scratch_comparison(model_path):
     """
@@ -405,19 +494,20 @@ def run_from_scratch_comparison(model_path):
     print("CNN FROM SCRATCH IMPLEMENTATION")
     print("=" * 50)
 
-    # Load data - sesuaikan dengan fungsi load data untuk CNN/image
-    # Asumsi: fungsi load_cifar10_data() mengembalikan data dalam format yang sesuai untuk CNN
+    # Load data - sesuaikan dengan fungsi load_cifar10_data()
     try:
-        (
-            (train_images, train_labels),
-            (valid_images, valid_labels),
-            (test_images, test_labels),
-            label_mapping,
-            num_classes,
-        ) = load_cifar10_data()  # Sesuaikan nama fungsi jika berbeda
+        (x_train, y_train), (x_val, y_val), (x_test, y_test), class_names = load_cifar10_data()
+        
+        # Extract variables for compatibility
+        test_images = x_test
+        test_labels = y_test
+        label_mapping = {name: i for i, name in enumerate(class_names)}  # Create mapping dict
+        num_classes = len(class_names)
+        
         print(f"Loaded test data: {len(test_images)} samples")
         print(f"Image shape: {test_images.shape[1:]}")
         print(f"Number of classes: {num_classes}")
+        print(f"Class names: {class_names}")
     except Exception as e:
         print(f"Error loading data: {e}")
         return None
@@ -488,8 +578,7 @@ def run_from_scratch_comparison(model_path):
         f"  Keras        - Accuracy: {keras_accuracy:.4f}, F1 Score (Macro): {keras_f1:.4f}\n"
     )
 
-    class_names = list(label_mapping.keys()) if isinstance(label_mapping, dict) else [f"Class_{i}" for i in range(num_classes)]
-
+    # Use class_names directly from load_cifar10_data()
     if scratch_classes is not None:
         report_lines.append("From scratch - Classification Report:")
         report_lines.append(
@@ -661,15 +750,9 @@ def run_from_scratch_comparison(model_path):
         for i, idx in enumerate(sample_indices):
             plt.subplot(2, 4, i + 1)
             
-            # Display image (assuming it's in a format suitable for display)
-            if len(test_images.shape) == 4:  # (batch, height, width, channels)
-                img = test_images[idx]
-                if img.shape[-1] == 1:  # Grayscale
-                    plt.imshow(img.squeeze(), cmap='gray')
-                else:  # RGB
-                    plt.imshow(img)
-            else:
-                plt.imshow(test_images[idx], cmap='gray')
+            # Display CIFAR-10 image (32x32x3 RGB format)
+            img = test_images[idx]
+            plt.imshow(img)  # CIFAR-10 images are already in RGB format
             
             true_label = class_names[test_labels[idx]]
             scratch_pred = class_names[scratch_classes[idx]]

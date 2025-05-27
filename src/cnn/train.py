@@ -196,3 +196,55 @@ def save_results_to_csv_filters(model_names, accuracies, f1_scores, losses, trai
     print(f"Results saved to {save_path}")
     
     return results_df
+
+def save_results_to_csv_kernels(model_names, accuracies, f1_scores, losses, train_times, filename):
+    """Save kernel sizes experiment results to CSV"""
+    import pandas as pd
+    
+    # Extract kernel configurations from model names
+    kernel_configs = []
+    for name in model_names:
+        # Extract kernel sizes from name like "kernels_3x3x3" or "kernels_3x5x7"
+        kernels_part = name.split('kernels_')[1]
+        kernel_configs.append(kernels_part)
+    
+    results_dict = {
+        'Model_Name': model_names,
+        'Kernel_Configuration': kernel_configs,
+        'Test_Accuracy': [f"{acc:.4f}" for acc in accuracies],
+        'F1_Score': [f"{f1:.4f}" for f1 in f1_scores],
+        'Test_Loss': [f"{loss:.4f}" for loss in losses],
+        'Training_Time_seconds': [f"{time:.2f}" for time in train_times]
+    }
+    
+    df = pd.DataFrame(results_dict)
+    df.to_csv(filename, index=False)
+    print(f"\n💾 Results saved to: {filename}")
+    
+    return df
+
+def save_results_to_csv_pooling(model_names, accuracies, f1_scores, losses, train_times, filename):
+    """Save pooling types experiment results to CSV"""
+    import pandas as pd
+    
+    # Extract pooling types from model names
+    pooling_types = []
+    for name in model_names:
+        # Extract pooling type from name like "max_pooling" or "average_pooling"
+        pooling_type = name.split('_pooling')[0]
+        pooling_types.append(pooling_type.capitalize())
+    
+    results_dict = {
+        'Model_Name': model_names,
+        'Pooling_Type': pooling_types,
+        'Test_Accuracy': [f"{acc:.4f}" for acc in accuracies],
+        'F1_Score': [f"{f1:.4f}" for f1 in f1_scores],
+        'Test_Loss': [f"{loss:.4f}" for loss in losses],
+        'Training_Time_seconds': [f"{time:.2f}" for time in train_times]
+    }
+    
+    df = pd.DataFrame(results_dict)
+    df.to_csv(filename, index=False)
+    print(f"\n💾 Results saved to: {filename}")
+    
+    return df

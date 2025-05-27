@@ -1,0 +1,4 @@
+Model_Name,Kernel_Configuration,Test_Accuracy,F1_Score,Test_Loss,Training_Time_seconds
+kernels_3x3x3,3x3x3,0.7016,0.6982,0.8953,301.04
+kernels_4x3x3,4x3x3,0.6924,0.6901,0.9242,281.23
+kernels_3x4x5,3x4x5,0.6950,0.6914,0.9104,308.11
