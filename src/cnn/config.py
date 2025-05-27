@@ -1,16 +1,4 @@
-# CNN Architecture
-NUM_CONV_LAYERS = 3
-BASE_FILTERS = 32
-KERNEL_SIZE = (3, 3)
-POOL_SIZE = (2, 2)
-
-# Dense layers
-DENSE_UNITS = 128
-NUM_DENSE_LAYERS = 2
-
-# Regularization
-DROPOUT_RATE = 0.3
-L2_REG = 0.001
-
-# Training
-LEARNING_RATE = 0.001
+ES_PATIENCE = 5        # Early stopping patience
+LR_FACTOR = 0.5        # Learning rate reduction factor
+LR_PATIENCE = 3        # Learning rate reduction patience
+MIN_LR = 1e-7          # Minimum learning rate
