@@ -7,7 +7,6 @@ def compute_macro_f1_score(y_true, y_pred_probs):
     y_pred = np.argmax(y_pred_probs, axis=1)
     return f1_score(y_true, y_pred, average='macro')
 
-# Load and preprocess CIFAR-10 data
 def load_cifar10_data():
     """
     Load and preprocess CIFAR-10 dataset with train/validation/test split
