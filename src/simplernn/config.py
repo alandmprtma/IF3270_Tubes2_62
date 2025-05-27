@@ -6,7 +6,7 @@ OUTPUT_SEQ_LEN = (
 
 # Parameter training
 BATCH_SIZE = 24
-EPOCHS = 40
+EPOCHS = 30
 RANDOM_SEED = 42
 
 # Arsitektur model default

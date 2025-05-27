@@ -124,7 +124,7 @@ class SimpleRNNFromScratch:
                 print(f"    Kernel shape: {self.weights[prefix + 'kernel'].shape}")
 
             elif isinstance(layer, tf.keras.layers.Dense):
-                if layer_name == "output_dense_layer":  # Sesuai model.py
+                if layer_name == "output_dense_layer":  
                     self.weights["output_kernel"] = layer.get_weights()[0]
                     self.weights["output_bias"] = layer.get_weights()[1]
                     print(
@@ -178,7 +178,6 @@ class SimpleRNNFromScratch:
 
     def forward(self, text_sequences):
         # 1. Embedding Layer
-        # text_sequences diharapkan sudah berupa array NumPy dari integer token
         current_tensor = self.embedding_forward(text_sequences)
 
         # 2. RNN Layers (Bidirectional or Unidirectional)
@@ -220,7 +219,7 @@ class SimpleRNNFromScratch:
 
                 if return_sequences_for_this_layer:
                     current_tensor = np.concatenate([h_fwd, h_bwd], axis=-1)
-                else:  # Last RNN layer in stack
+                else:  
                     current_tensor = np.concatenate(
                         [h_fwd[:, -1, :], h_bwd[:, 0, :]], axis=-1
                     )
@@ -248,7 +247,7 @@ class SimpleRNNFromScratch:
         return output
 
     def predict(self, texts):
-        sequences = self.vectorizer(texts).numpy()  # Konversi ke NumPy array
+        sequences = self.vectorizer(texts).numpy()  
         return self.forward(sequences)
 
     def compare_with_keras(self, texts):
@@ -257,7 +256,7 @@ class SimpleRNNFromScratch:
         scratch_time = time.time() - start_time_scratch
 
         start_time_keras = time.time()
-        sequences_tf = self.vectorizer(texts)  # Biarkan sebagai Tensor untuk Keras
+        sequences_tf = self.vectorizer(texts) 
         keras_preds = self.keras_model.predict(sequences_tf)
         keras_time = time.time() - start_time_keras
 
@@ -301,7 +300,7 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
     print("\n" + "=" * 50)
     print(
         "SIMPLE RNN FROM SCRATCH IMPLEMENTATION"
-    )  # Atau sesuaikan judul jika ini untuk LSTM
+    )  
     print("=" * 50)
 
     # Muat data
@@ -311,11 +310,10 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
         (test_texts, test_labels),
         label_mapping,
         num_classes,
-    ) = load_data()  # Pastikan fungsi ini tersedia
+    ) = load_data()  
     print(f"Loaded test data: {len(test_texts)} samples")
 
     # Inisialisasi implementasi from-scratch
-    # Ganti SimpleRNNFromScratch dengan LSTMFromScratch jika ini untuk LSTM
     scratch_rnn = SimpleRNNFromScratch(model_path, vectorizer_path)
 
     # Bandingkan implementasi pada data test
@@ -339,7 +337,7 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
     scratch_f1 = 0.0
     if scratch_classes is not None:
         scratch_accuracy = np.mean(scratch_classes == test_labels)
-        scratch_f1 = compute_f1_score(  # Pastikan fungsi ini tersedia
+        scratch_f1 = compute_f1_score(  
             test_labels, scratch_preds
         )
     else:
@@ -350,7 +348,7 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
     keras_accuracy = np.mean(keras_classes == test_labels)
     keras_f1 = compute_f1_score(test_labels, keras_preds)
 
-    # --- Mulai Laporan Detail (yang sebelumnya disimpan ke file) ---
+    # --- Mulai Laporan Detail ---
     report_lines = []
     report_lines.append("SIMPLE RNN FROM SCRATCH EVALUATION")
     report_lines.append("=" * 50 + "\n")
@@ -425,7 +423,6 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
         plt.figure(figsize=(13, 5.5))
 
         plt.subplot(1, 2, 1)
-        # cm_scratch_obj sudah dihitung di atas untuk laporan teks
         plt.imshow(cm_scratch_obj, interpolation="nearest", cmap=plt.cm.Blues)
         plt.title("From Scratch Confusion Matrix")
         plt.colorbar()
@@ -447,10 +444,9 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
                 )
         plt.ylabel("True label")
         plt.xlabel("Predicted label")
-        plt.tight_layout()  # Panggil tight_layout per subplot jika perlu atau sebelum suptitle
+        plt.tight_layout()  
 
         plt.subplot(1, 2, 2)
-        # cm_keras_obj sudah dihitung di atas
         plt.imshow(cm_keras_obj, interpolation="nearest", cmap=plt.cm.Blues)
         plt.title("Keras Confusion Matrix")
         plt.colorbar()
@@ -474,9 +470,9 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
         plt.xlabel("Predicted label")
 
         plt.suptitle("Perbandingan Confusion Matrix", fontsize=16)
-        plt.tight_layout(rect=[0, 0, 1, 0.96])  # Sesuaikan rect untuk suptitle
-        plt.show()  # Tampilkan plot confusion matrix
-        plt.close()  # Tutup figure
+        plt.tight_layout(rect=[0, 0, 1, 0.96])  
+        plt.show()  
+        plt.close()  
 
         # Bandingkan distribusi prediksi
         plt.figure(figsize=(12, 5))
@@ -502,8 +498,8 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
 
         plt.suptitle("Perbandingan Distribusi Probabilitas Maksimum", fontsize=16)
         plt.tight_layout(rect=[0, 0, 1, 0.95])
-        plt.show()  # Tampilkan plot distribusi probabilitas
-        plt.close()  # Tutup figure
+        plt.show()  
+        plt.close()  
 
         # Bandingkan prediksi individual
         plt.figure(figsize=(10, 6))
@@ -512,7 +508,6 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
             sample_indices = np.random.choice(
                 len(test_texts), sample_size, replace=False
             )
-            # Pastikan scratch_preds valid sebelum diindeks
             if scratch_preds is not None and len(scratch_preds) == len(keras_preds):
                 scratch_sample_preds = scratch_preds[sample_indices]
                 keras_sample_preds = keras_preds[sample_indices]
@@ -531,14 +526,14 @@ def run_from_scratch_comparison(model_path, vectorizer_path):
                 )
                 plt.grid(axis="y", linestyle="--", alpha=0.7)
                 plt.tight_layout()
-                plt.show()  # Tampilkan plot perbedaan prediksi
+                plt.show() 
             else:
                 print(
                     "Tidak dapat memplot perbedaan prediksi karena scratch_preds tidak valid atau panjangnya tidak cocok."
                 )
         else:
             print("Tidak ada data tes untuk memplot perbedaan prediksi individual.")
-        plt.close()  # Tutup figure
+        plt.close() 
     else:
         print("Plotting dilewati karena prediksi scratch tidak valid.")
 

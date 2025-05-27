@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
 
 # Impor dari modul lokal di direktori yang sama
-import config  # Menggunakan config.py dari folder lstm/
+import config  
 from data_preprocessing import (
     load_data,
     compute_f1_score,
-)  # compute_f1_score dari data_preprocessing.py
+)  
 
 
 # Fungsi aktivasi
@@ -47,7 +47,7 @@ class LSTMFromScratch:
             print(f"Processing layer: {layer_name} (Type: {type(layer).__name__})")
 
             if isinstance(layer, tf.keras.layers.Embedding):
-                if layer.name == "embedding_layer":  # Sesuai model_lstm.py
+                if layer.name == "embedding_layer": 
                     self.weights["embedding"] = layer.get_weights()[0]
                     print(
                         f"  Extracted embedding weights, shape: {self.weights['embedding'].shape}"
@@ -127,7 +127,7 @@ class LSTMFromScratch:
                 )
 
             elif isinstance(layer, tf.keras.layers.Dense):
-                if layer.name == "output_dense_layer":  # Sesuai model_lstm.py
+                if layer.name == "output_dense_layer":  
                     self.weights["output_kernel"] = layer.get_weights()[0]
                     self.weights["output_bias"] = layer.get_weights()[1]
                     print(
@@ -144,13 +144,6 @@ class LSTMFromScratch:
         return self.weights["embedding"][indices]
 
     def _lstm_cell_forward(self, x_t, h_prev, c_prev, W_all, U_all, b_all):
-        """
-        Satu langkah forward untuk LSTM cell.
-        W_all: Gabungan kernel input (input_dim, 4*units)
-        U_all: Gabungan kernel recurrent (units, 4*units)
-        b_all: Gabungan bias (4*units,)
-        Urutan gate di Keras: i, f, c, o
-        """
         units = U_all.shape[0]
 
         # Proyeksi gabungan
@@ -183,7 +176,7 @@ class LSTMFromScratch:
 
         if return_sequences:
             outputs_h = np.zeros((batch_size, seq_length, units))
-            # outputs_c = np.zeros((batch_size, seq_length, units)) # Jika perlu cell states
+            # outputs_c = np.zeros((batch_size, seq_length, units))
 
         time_steps = range(seq_length)
         if go_backwards:
@@ -201,7 +194,7 @@ class LSTMFromScratch:
 
         return (
             outputs_h if return_sequences else h_t
-        )  # Hanya mengembalikan hidden states
+        )  
 
     def dense_forward(self, inputs, kernel, bias):
         logits = np.dot(inputs, kernel) + bias
@@ -238,7 +231,7 @@ class LSTMFromScratch:
                     fwd_b,
                     return_sequences=True,
                     go_backwards=False,
-                )  # Selalu True untuk digabungkan
+                )  
 
                 # Backward pass LSTM
                 h_bwd = self._lstm_pass(
@@ -248,15 +241,14 @@ class LSTMFromScratch:
                     bwd_b,
                     return_sequences=True,
                     go_backwards=True,
-                )  # Selalu True untuk digabungkan
+                ) 
 
                 # Gabungkan output
                 if (
                     return_sequences_for_this_pass
                 ):  # Jika Keras layer ini return_sequences=True
                     current_tensor = np.concatenate([h_fwd, h_bwd], axis=-1)
-                else:  # Jika Keras layer ini return_sequences=False (biasanya layer LSTM terakhir)
-                    # Ambil state terakhir dari forward pass dan state "pertama" (terakhir diproses) dari backward pass
+                else:  
                     current_tensor = np.concatenate(
                         [h_fwd[:, -1, :], h_bwd[:, 0, :]], axis=-1
                     )
@@ -274,7 +266,6 @@ class LSTMFromScratch:
                     return_sequences=return_sequences_for_this_pass,
                     go_backwards=False,
                 )
-            # print(f"  After LSTM stack {config_entry['stack_idx']}: shape={current_tensor.shape}")
 
         lstm_output = current_tensor
 
@@ -324,7 +315,7 @@ class LSTMFromScratch:
 
         if (
             mae > 1e-4
-        ):  # Threshold bisa disesuaikan, LSTM mungkin punya error numerik sedikit lebih besar
+        ): 
             print("  MAE tinggi, memeriksa beberapa perbedaan prediksi:")
             for i in range(min(3, scratch_preds.shape[0])):  # Tampilkan beberapa contoh
                 print(
@@ -332,19 +323,11 @@ class LSTMFromScratch:
                 )
 
         return scratch_preds, keras_preds, implementation_accuracy, mae
-
-
+    
 def run_lstm_from_scratch_comparison(model_path, vectorizer_path):
-    """
-    Fungsi utama untuk menjalankan perbandingan implementasi LSTM from scratch dengan Keras.
-    """
     print("\n" + "=" * 50)
     print("LSTM FROM SCRATCH IMPLEMENTATION COMPARISON (ROBUST)")
     print("=" * 50)
-
-    output_dir = "from_scratch_lstm_results"  # Nama direktori output spesifik LSTM
-    os.makedirs(output_dir, exist_ok=True)
-    print(f"Output akan disimpan di direktori: {output_dir}")
 
     (
         (train_texts, train_labels),
@@ -352,7 +335,7 @@ def run_lstm_from_scratch_comparison(model_path, vectorizer_path):
         (test_texts, test_labels),
         label_mapping,
         num_classes,
-    ) = load_data()  # Path data ditangani oleh load_data
+    ) = load_data()
     print(f"Loaded test data: {len(test_texts)} samples")
 
     scratch_lstm = LSTMFromScratch(model_path, vectorizer_path)
@@ -364,23 +347,22 @@ def run_lstm_from_scratch_comparison(model_path, vectorizer_path):
     )
 
     scratch_classes = None
-    cm_scratch = None  # Inisialisasi cm_scratch
-    if not (np.any(np.isnan(scratch_preds)) or np.any(np.isinf(scratch_preds))):
+    cm_scratch_obj = None 
+    if scratch_preds is not None and not (np.any(np.isnan(scratch_preds)) or np.any(np.isinf(scratch_preds))):
         scratch_classes = np.argmax(scratch_preds, axis=1)
-        cm_scratch = confusion_matrix(test_labels, scratch_classes)  # Hitung jika valid
+        cm_scratch_obj = confusion_matrix(test_labels, scratch_classes)
+    else:
+        print("Peringatan: Prediksi Scratch LSTM mengandung NaN/Inf.")
+
 
     keras_classes = np.argmax(keras_preds, axis=1)
-    cm_keras = confusion_matrix(
-        test_labels, keras_classes
-    )  # Selalu bisa dihitung untuk Keras
+    cm_keras_obj = confusion_matrix(test_labels, keras_classes)
 
     scratch_accuracy = 0.0
     scratch_f1 = 0.0
     if scratch_classes is not None:
         scratch_accuracy = np.mean(scratch_classes == test_labels)
-        scratch_f1 = compute_f1_score(
-            test_labels, scratch_preds
-        )  # compute_f1_score menerima probabilitas
+        scratch_f1 = compute_f1_score(test_labels, scratch_preds)
     else:
         print(
             "Peringatan: Metrik Scratch LSTM tidak dapat dihitung karena prediksi tidak valid."
@@ -389,55 +371,95 @@ def run_lstm_from_scratch_comparison(model_path, vectorizer_path):
     keras_accuracy = np.mean(keras_classes == test_labels)
     keras_f1 = compute_f1_score(test_labels, keras_preds)
 
-    print("\nMetrik pada set test (LSTM):")
-    print(
-        f"From scratch - Akurasi: {scratch_accuracy:.4f}, F1 Score (Macro): {scratch_f1:.4f}"
+    # --- Mulai Laporan Detail ---
+    report_lines = []
+    report_lines.append("LSTM FROM SCRATCH EVALUATION (ROBUST)")
+    report_lines.append("=" * 50 + "\n")
+    report_lines.append(f"Keras Model Path: {model_path}")
+    report_lines.append(f"Vectorizer Path: {vectorizer_path}\n")
+
+    report_lines.append(
+        f"Implementation match accuracy (kelas): {implementation_accuracy:.6f}"
     )
-    print(f"Keras - Akurasi: {keras_accuracy:.4f}, F1 Score (Macro): {keras_f1:.4f}")
+    report_lines.append(
+        f"Mean absolute error (MAE) between prediction probabilities: {mae:.8f}\n"
+    )
+
+    report_lines.append("Test set metrics (LSTM):")
+    report_lines.append(
+        f"  From scratch - Accuracy: {scratch_accuracy:.4f}, F1 Score (Macro): {scratch_f1:.4f}"
+    )
+    report_lines.append(
+        f"  Keras        - Accuracy: {keras_accuracy:.4f}, F1 Score (Macro): {keras_f1:.4f}\n"
+    )
 
     class_names = list(label_mapping.keys())
 
     if scratch_classes is not None:
-        print("\nFrom scratch LSTM - Laporan Klasifikasi:")
-        print(
+        report_lines.append("From scratch LSTM - Classification Report:")
+        report_lines.append(
             classification_report(
-                test_labels, scratch_classes, target_names=class_names, zero_division=0
+                test_labels,
+                scratch_classes,
+                target_names=class_names,
+                zero_division=0,
             )
         )
+        report_lines.append("\n")
     else:
-        print(
-            "\nFrom scratch LSTM - Laporan Klasifikasi: Tidak tersedia karena prediksi tidak valid."
+        report_lines.append(
+            "From scratch LSTM - Classification Report: Not available due to invalid predictions.\n"
         )
 
-    print("\nKeras LSTM - Laporan Klasifikasi:")
-    print(
+    report_lines.append("Keras LSTM - Classification Report:")
+    report_lines.append(
         classification_report(
             test_labels, keras_classes, target_names=class_names, zero_division=0
         )
     )
+    report_lines.append("\n")
+
+    if cm_scratch_obj is not None:
+        report_lines.append("From scratch LSTM - Confusion Matrix:")
+        report_lines.append(np.array2string(cm_scratch_obj, separator=", "))
+        report_lines.append("\n")
+    else:
+        report_lines.append(
+            "From scratch LSTM - Confusion Matrix: Not available due to invalid predictions.\n"
+        )
+
+    report_lines.append("Keras LSTM - Confusion Matrix:")
+    report_lines.append(np.array2string(cm_keras_obj, separator=", "))
+    report_lines.append("\n")
+
+    # Cetak semua laporan detail ke konsol
+    print("\n--- Laporan Detail Implementasi LSTM From Scratch ---")
+    for line in report_lines:
+        print(line)
+    print("--- Akhir Laporan Detail LSTM ---")
+
 
     # Visualisasi hanya jika prediksi scratch valid
-    if scratch_classes is not None and cm_scratch is not None:
-        # Buat dan simpan confusion matrix
+    if scratch_classes is not None and cm_scratch_obj is not None and scratch_preds is not None:
         plt.figure(figsize=(13, 5.5))
 
         plt.subplot(1, 2, 1)
-        plt.imshow(cm_scratch, interpolation="nearest", cmap=plt.cm.Blues)
+        plt.imshow(cm_scratch_obj, interpolation="nearest", cmap=plt.cm.Blues)
         plt.title("From Scratch LSTM Confusion Matrix")
         plt.colorbar()
         tick_marks = np.arange(len(class_names))
         plt.xticks(tick_marks, class_names, rotation=45, ha="right")
         plt.yticks(tick_marks, class_names)
-        for i in range(cm_scratch.shape[0]):
-            for j in range(cm_scratch.shape[1]):
+        for i in range(cm_scratch_obj.shape[0]):
+            for j in range(cm_scratch_obj.shape[1]):
                 plt.text(
                     j,
                     i,
-                    format(cm_scratch[i, j], "d"),
+                    format(cm_scratch_obj[i, j], "d"),
                     horizontalalignment="center",
                     color=(
                         "white"
-                        if cm_scratch[i, j] > cm_scratch.max() / 2.0
+                        if cm_scratch_obj[i, j] > cm_scratch_obj.max() / 2.0
                         else "black"
                     ),
                 )
@@ -446,33 +468,29 @@ def run_lstm_from_scratch_comparison(model_path, vectorizer_path):
         plt.tight_layout()
 
         plt.subplot(1, 2, 2)
-        plt.imshow(cm_keras, interpolation="nearest", cmap=plt.cm.Blues)
+        plt.imshow(cm_keras_obj, interpolation="nearest", cmap=plt.cm.Blues)
         plt.title("Keras LSTM Confusion Matrix")
         plt.colorbar()
         tick_marks = np.arange(len(class_names))
         plt.xticks(tick_marks, class_names, rotation=45, ha="right")
         plt.yticks(tick_marks, class_names)
-        for i in range(cm_keras.shape[0]):
-            for j in range(cm_keras.shape[1]):
+        for i in range(cm_keras_obj.shape[0]):
+            for j in range(cm_keras_obj.shape[1]):
                 plt.text(
                     j,
                     i,
-                    format(cm_keras[i, j], "d"),
+                    format(cm_keras_obj[i, j], "d"),
                     horizontalalignment="center",
-                    color="white" if cm_keras[i, j] > cm_keras.max() / 2.0 else "black",
+                    color="white" if cm_keras_obj[i, j] > cm_keras_obj.max() / 2.0 else "black",
                 )
         plt.ylabel("True label")
         plt.xlabel("Predicted label")
 
         plt.suptitle("Perbandingan Confusion Matrix (LSTM)", fontsize=16)
         plt.tight_layout(rect=[0, 0, 1, 0.96])
-        plt.savefig(f"{output_dir}/confusion_matrices_lstm_comparison.png")
-        print(
-            f"Plot confusion matrix LSTM disimpan di: {output_dir}/confusion_matrices_lstm_comparison.png"
-        )
+        plt.show()
         plt.close()
 
-        # Bandingkan distribusi prediksi
         plt.figure(figsize=(12, 5))
         plt.subplot(1, 2, 1)
         plt.hist(
@@ -500,37 +518,33 @@ def run_lstm_from_scratch_comparison(model_path, vectorizer_path):
             "Perbandingan Distribusi Probabilitas Maksimum (LSTM)", fontsize=16
         )
         plt.tight_layout(rect=[0, 0, 1, 0.95])
-        plt.savefig(f"{output_dir}/probability_distributions_lstm.png")
-        print(
-            f"Plot distribusi probabilitas LSTM disimpan di: {output_dir}/probability_distributions_lstm.png"
-        )
+        plt.show()
         plt.close()
 
-        # Bandingkan prediksi individual
         plt.figure(figsize=(10, 6))
         sample_size = min(20, len(test_texts))
         if len(test_texts) > 0:
             sample_indices = np.random.choice(
                 len(test_texts), sample_size, replace=False
             )
-            scratch_sample_preds = scratch_preds[sample_indices]
-            keras_sample_preds = keras_preds[sample_indices]
-            abs_diffs = np.abs(scratch_sample_preds - keras_sample_preds)
-            mean_diffs_per_sample = np.mean(abs_diffs, axis=1)
+            if scratch_preds is not None and len(scratch_preds) == len(keras_preds):
+                scratch_sample_preds = scratch_preds[sample_indices]
+                keras_sample_preds = keras_preds[sample_indices]
+                abs_diffs = np.abs(scratch_sample_preds - keras_sample_preds)
+                mean_diffs_per_sample = np.mean(abs_diffs, axis=1)
 
-            plt.bar(range(sample_size), mean_diffs_per_sample)
-            plt.title("Perbedaan Absolut Rata-rata Probabilitas per Sampel (LSTM)")
-            plt.xlabel("Indeks Sampel Acak")
-            plt.ylabel("MAE Probabilitas")
-            plt.xticks(
-                range(sample_size), sample_indices.astype(str), rotation=45, ha="right"
-            )
-            plt.grid(axis="y", linestyle="--", alpha=0.7)
-            plt.tight_layout()
-            plt.savefig(f"{output_dir}/prediction_differences_lstm.png")
-            print(
-                f"Plot perbedaan prediksi LSTM disimpan di: {output_dir}/prediction_differences_lstm.png"
-            )
+                plt.bar(range(sample_size), mean_diffs_per_sample)
+                plt.title("Perbedaan Absolut Rata-rata Probabilitas per Sampel (LSTM)")
+                plt.xlabel("Indeks Sampel Acak")
+                plt.ylabel("MAE Probabilitas")
+                plt.xticks(
+                    range(sample_size), sample_indices.astype(str), rotation=45, ha="right"
+                )
+                plt.grid(axis="y", linestyle="--", alpha=0.7)
+                plt.tight_layout()
+                plt.show()
+            else:
+                print("Tidak dapat memplot perbedaan prediksi LSTM karena scratch_preds tidak valid atau panjangnya tidak cocok.")
         else:
             print(
                 "Tidak ada data tes untuk memplot perbedaan prediksi individual (LSTM)."
@@ -539,67 +553,4 @@ def run_lstm_from_scratch_comparison(model_path, vectorizer_path):
     else:
         print("Plotting LSTM dilewati karena prediksi scratch tidak valid.")
 
-    # Simpan hasil detail ke file teks
-    results_filepath = f"{output_dir}/detailed_lstm_results.txt"
-    with open(results_filepath, "w") as f:
-        f.write("LSTM FROM SCRATCH EVALUATION (ROBUST)\n")
-        f.write("=" * 50 + "\n\n")
-        f.write(f"Keras Model Path: {model_path}\n")
-        f.write(f"Vectorizer Path: {vectorizer_path}\n\n")
-
-        f.write(
-            f"Implementation match accuracy (kelas): {implementation_accuracy:.6f}\n"
-        )
-        f.write(
-            f"Mean absolute error (MAE) between prediction probabilities: {mae:.8f}\n\n"
-        )
-
-        f.write("Test set metrics (LSTM):\n")
-        f.write(
-            f"  From scratch - Accuracy: {scratch_accuracy:.4f}, F1 Score (Macro): {scratch_f1:.4f}\n"
-        )
-        f.write(
-            f"  Keras        - Accuracy: {keras_accuracy:.4f}, F1 Score (Macro): {keras_f1:.4f}\n\n"
-        )
-
-        if scratch_classes is not None:
-            f.write("From scratch LSTM - Classification Report:\n")
-            f.write(
-                classification_report(
-                    test_labels,
-                    scratch_classes,
-                    target_names=class_names,
-                    zero_division=0,
-                )
-            )
-            f.write("\n\n")
-        else:
-            f.write(
-                "From scratch LSTM - Classification Report: Not available due to invalid predictions.\n\n"
-            )
-
-        f.write("Keras LSTM - Classification Report:\n")
-        f.write(
-            classification_report(
-                test_labels, keras_classes, target_names=class_names, zero_division=0
-            )
-        )
-        f.write("\n\n")
-
-        if cm_scratch is not None:
-            cm_scratch_str = np.array2string(cm_scratch, separator=", ")
-            f.write("From scratch LSTM - Confusion Matrix:\n")
-            f.write(cm_scratch_str)
-            f.write("\n\n")
-        else:
-            f.write(
-                "From scratch LSTM - Confusion Matrix: Not available due to invalid predictions.\n\n"
-            )
-
-        cm_keras_str = np.array2string(cm_keras, separator=", ")
-        f.write("Keras LSTM - Confusion Matrix:\n")
-        f.write(cm_keras_str)
-        f.write("\n")
-
-    print(f"Hasil detail LSTM disimpan di: {results_filepath}")
     return scratch_lstm
