@@ -1,26 +1,25 @@
-# CNN Model Creation Script
 from tensorflow.keras import layers, models
 
 def create_cnn_model(conv_layers=2, filters_per_layer=[32, 64], 
                      kernel_sizes=[3, 3], pooling_type='max'):
     """
-    Create CNN model with configurable architecture
-    
-    Parameters:
-    -----------
+    Membangun model CNN dengan arsitektur yang dapat disesuaikan
+
+    Parameter:
+    ----------
     conv_layers : int
-        Number of convolutional layers
+        Total jumlah lapisan konvolusi
     filters_per_layer : list
-        Number of filters for each convolutional layer
+        Jumlah filter yang digunakan pada setiap lapisan konvolusi
     kernel_sizes : list
-        Kernel sizes for each convolutional layer
+        Ukuran kernel yang diterapkan pada masing-masing lapisan
     pooling_type : str
-        Type of pooling ('max' or 'average')
-    
-    Returns:
-    --------
+        Jenis pooling yang digunakan, bisa 'max' atau 'average'
+
+    Hasil:
+    ------
     tensorflow.keras.Model
-        Compiled CNN model
+        Model CNN yang telah dikompilasi dan siap digunakan
     """
     model = models.Sequential()
     
