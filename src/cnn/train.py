@@ -158,7 +158,6 @@ def plot_combined_comparison(histories, model_names, f1_scores, train_times):
 
 def save_results_to_csv_conv(model_names, accuracies, f1_scores, losses, train_times, save_path):
     """Save experiment results to CSV"""
-    # Extract number of layers from model names
     num_layers = [int(name.split('_')[0]) for name in model_names]
     
     results_df = pd.DataFrame({
@@ -176,10 +175,8 @@ def save_results_to_csv_conv(model_names, accuracies, f1_scores, losses, train_t
 
 def save_results_to_csv_filters(model_names, accuracies, f1_scores, losses, train_times, save_path):
     """Save filter experiment results to CSV"""
-    # Extract filter configuration from model names
     filter_configs = []
     for name in model_names:
-        # Extract numbers from name like "filters_16_32_64"
         parts = name.split('_')
         config = f"{parts[1]}-{parts[2]}-{parts[3]}"
         filter_configs.append(config)
@@ -201,10 +198,8 @@ def save_results_to_csv_kernels(model_names, accuracies, f1_scores, losses, trai
     """Save kernel sizes experiment results to CSV"""
     import pandas as pd
     
-    # Extract kernel configurations from model names
     kernel_configs = []
     for name in model_names:
-        # Extract kernel sizes from name like "kernels_3x3x3" or "kernels_3x5x7"
         kernels_part = name.split('kernels_')[1]
         kernel_configs.append(kernels_part)
     
@@ -227,10 +222,9 @@ def save_results_to_csv_pooling(model_names, accuracies, f1_scores, losses, trai
     """Save pooling types experiment results to CSV"""
     import pandas as pd
     
-    # Extract pooling types from model names
     pooling_types = []
     for name in model_names:
-        # Extract pooling type from name like "max_pooling" or "average_pooling"
+        # "max_pooling" atau "average_pooling"
         pooling_type = name.split('_pooling')[0]
         pooling_types.append(pooling_type.capitalize())
     
