@@ -14,19 +14,19 @@ from data_preprocessing import (
 
 class CNNFromScratch:
     """
-    Optimized implementation of a CNN model from scratch using vectorized NumPy operations.
-    This class loads weights from a trained Keras model and performs
-    forward propagation with significant performance improvements.
+    Implementasi teroptimasi dari model CNN yang dibuat dari nol menggunakan operasi vektorisasi dengan NumPy.
+    Kelas ini memuat bobot dari model Keras yang telah dilatih, lalu melakukan propagasi maju
+    dengan peningkatan performa yang signifikan.
     """
     
     def __init__(self, keras_model_path):
         """
-        Initialize the from-scratch CNN by loading weights from a pre-trained Keras model
+        Inisialisasi CNN dari nol dengan memuat bobot dari model Keras yang sudah dilatih sebelumnya.
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         keras_model_path : str
-            Path to the saved Keras model
+            Lokasi file model Keras yang sudah disimpan.
         """
         print(f"Loading Keras model from: {keras_model_path}")
         self.keras_model = tf.keras.models.load_model(keras_model_path)
@@ -37,7 +37,7 @@ class CNNFromScratch:
         print("Model loaded and weights extracted successfully")
     
     def extract_weights_from_keras_model(self):
-        """Extract weights from the loaded Keras model"""
+        """Mengambil bobot dari model Keras yang telah dimuat"""
         self.weights = {}
         self.layer_info = {}
         
@@ -96,26 +96,26 @@ class CNNFromScratch:
     
     def im2col(self, inputs, kernel_size, strides, padding):
         """
-        Convert image to column matrix for efficient convolution using matrix multiplication.
-        This is a key optimization that transforms the convolution operation into a GEMM operation.
+        Mengubah gambar menjadi matriks kolom agar proses konvolusi bisa dilakukan lebih efisien lewat perkalian matriks.
+        Teknik ini jadi kunci optimasi karena mengubah operasi konvolusi jadi operasi GEMM (General Matrix Multiplication).
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         inputs : numpy.ndarray
-            Input tensor of shape (batch_size, height, width, channels)
+            Data input dengan format (batch_size, tinggi, lebar, jumlah_channel)
         kernel_size : tuple
-            (kernel_height, kernel_width)
+            Ukuran kernel, yaitu (tinggi_kernel, lebar_kernel)
         strides : tuple
-            (stride_h, stride_w)
+            Langkah pergeseran (stride), dalam bentuk (vertikal, horizontal)
         padding : str
-            'valid' or 'same'
+            Jenis padding, bisa 'valid' atau 'same'
         
-        Returns:
-        --------
+        Return:
+        -------
         numpy.ndarray
-            Column matrix of shape (batch_size * output_height * output_width, kernel_h * kernel_w * input_channels)
+            Matriks kolom dengan ukuran (batch_size * tinggi_output * lebar_output, tinggi_kernel * lebar_kernel * jumlah_channel_input)
         tuple
-            (output_height, output_width) - dimensions of output feature map
+            (tinggi_output, lebar_output) — ukuran output setelah konvolusi
         """
         batch_size, input_height, input_width, input_channels = inputs.shape
         kernel_height, kernel_width = kernel_size
@@ -162,27 +162,27 @@ class CNNFromScratch:
     
     def conv2d_forward(self, inputs, kernel, bias, strides=(1, 1), padding='valid', activation='relu'):
         """
-        Optimized 2D Convolution forward pass using im2col and matrix multiplication
+        Proses forward pass konvolusi 2D yang dioptimasi menggunakan im2col dan perkalian matriks.
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         inputs : numpy.ndarray
-            Input tensor of shape (batch_size, height, width, channels)
+            Tensor input dengan bentuk (batch_size, tinggi, lebar, jumlah_channel)
         kernel : numpy.ndarray
-            Convolution kernel of shape (kernel_height, kernel_width, input_channels, output_channels)
+            Kernel konvolusi dengan bentuk (tinggi_kernel, lebar_kernel, jumlah_channel_input, jumlah_channel_output)
         bias : numpy.ndarray
-            Bias vector of shape (output_channels,)
+            Vektor bias dengan bentuk (jumlah_channel_output,)
         strides : tuple
-            Stride for convolution
+            Langkah pergeseran (stride) konvolusi
         padding : str
-            Padding type ('valid' or 'same')
+            Jenis padding ('valid' atau 'same')
         activation : str
-            Activation function name
+            Nama fungsi aktivasi
         
-        Returns:
-        --------
+        Return:
+        -------
         numpy.ndarray
-            Output tensor after convolution
+            Tensor output hasil konvolusi
         """
         batch_size = inputs.shape[0]
         kernel_height, kernel_width, input_channels, output_channels = kernel.shape
@@ -214,23 +214,17 @@ class CNNFromScratch:
     
     def pooling_forward(self, inputs, pool_size=(2, 2), strides=(2, 2), pooling_type='max'):
         """
-        Optimized pooling layer forward pass using vectorized operations
+        Proses forward pass pada layer flatten (sudah dioptimasi dengan reshape).
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         inputs : numpy.ndarray
-            Input tensor of shape (batch_size, height, width, channels)
-        pool_size : tuple
-            Size of pooling window
-        strides : tuple
-            Stride for pooling
-        pooling_type : str
-            Type of pooling ('max' or 'average')
+            Tensor input
         
-        Returns:
-        --------
+        Return:
+        -------
         numpy.ndarray
-            Output tensor after pooling
+            Tensor hasil flatten dengan bentuk (batch_size, ukuran_flatten)
         """
         batch_size, input_height, input_width, channels = inputs.shape
         pool_h, pool_w = pool_size
@@ -281,23 +275,23 @@ class CNNFromScratch:
     
     def dense_forward(self, inputs, kernel, bias, activation='relu'):
         """
-        Optimized dense layer forward pass using vectorized operations
+        Proses forward pass pada dense layer yang sudah dioptimasi menggunakan operasi vektorisasi.
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         inputs : numpy.ndarray
-            Input tensor
+            Tensor input
         kernel : numpy.ndarray
-            Weight matrix
+            Matriks bobot
         bias : numpy.ndarray
-            Bias vector
+            Vektor bias
         activation : str
-            Activation function name
+            Nama fungsi aktivasi
         
-        Returns:
-        --------
+        Return:
+        -------
         numpy.ndarray
-            Output tensor after dense layer
+            Tensor output setelah melalui dense layer
         """
         # Linear transformation using optimized BLAS operations
         output = np.dot(inputs, kernel) + bias
@@ -314,17 +308,17 @@ class CNNFromScratch:
     
     def forward(self, inputs):
         """
-        Optimized full model forward pass
+        Proses forward pass lengkap yang sudah dioptimasi.
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         inputs : numpy.ndarray
-            Input tensor of shape (batch_size, height, width, channels)
+            Tensor input dengan bentuk (batch_size, tinggi, lebar, jumlah_channel)
         
-        Returns:
-        --------
+        Return:
+        -------
         numpy.ndarray
-            Output probabilities
+            Probabilitas output
         """
         x = inputs.copy()
         
@@ -368,35 +362,35 @@ class CNNFromScratch:
     
     def predict(self, inputs):
         """
-        Make predictions for input data
+        Melakukan prediksi terhadap data input.
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         inputs : numpy.ndarray
-            Input images
+            Gambar input
         
-        Returns:
-        --------
+        Return:
+        -------
         numpy.ndarray
-            Predicted probabilities for each class
+            Probabilitas prediksi untuk tiap kelas
         """
         return self.forward(inputs)
     
     def compare_with_keras(self, test_data, test_labels):
         """
-        Compare predictions from scratch implementation with Keras model
+        Membandingkan hasil prediksi dari implementasi manual dengan model Keras.
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         test_data : numpy.ndarray
-            Test images
+            Gambar uji
         test_labels : numpy.ndarray
-            Test labels
+            Label uji
         
-        Returns:
-        --------
+        Return:
+        -------
         tuple
-            (from_scratch_predictions, keras_predictions, accuracy)
+            (prediksi_manual, prediksi_keras, akurasi)
         """
         # Get predictions from our scratch implementation
         print("Getting predictions from scratch implementation...")
@@ -435,19 +429,19 @@ class CNNFromScratch:
     
     def compute_macro_f1_score(self, y_true, y_pred):
         """
-        Compute macro F1-score for multi-class classification
+        Menghitung skor F1 makro untuk klasifikasi multi-kelas.
         
-        Parameters:
-        -----------
+        Parameter:
+        ----------
         y_true : numpy.ndarray
-            True labels (one-hot encoded or integer labels)
+            Label asli (bisa dalam bentuk one-hot atau label sebagai angka)
         y_pred : numpy.ndarray
-            Predicted probabilities
+            Probabilitas hasil prediksi
         
-        Returns:
-        --------
+        Return:
+        -------
         float
-            Macro F1-score
+            Nilai F1-score makro
         """
         # Convert predictions to class labels
         if y_pred.ndim > 1:
