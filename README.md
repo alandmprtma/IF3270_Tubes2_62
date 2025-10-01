@@ -12,8 +12,6 @@
 </div>
 
 ## ️🖥️ Deskripsi Umum
-Tentu, berikut adalah contoh deskripsi umum untuk repositori GitHub Anda yang disesuaikan dengan spesifikasi Tugas Besar 2 mengenai CNN dan RNN/LSTM:
-
 Repositori ini dibuat untuk memenuhi Tugas Besar II mata kuliah IF3270 - Pembelajaran Mesin. Proyek ini bertujuan untuk memberikan pemahaman praktis dan mendalam mengenai implementasi arsitektur Convolutional Neural Network (CNN) untuk klasifikasi gambar (image classification) pada dataset CIFAR-10, serta berbagai jenis Recurrent Neural Network (Simple RNN dan LSTM) untuk klasifikasi teks (text classification) pada dataset NusaX-Sentiment.
 
 Tugas ini mencakup dua aspek utama:
